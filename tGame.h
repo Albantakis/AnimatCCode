@@ -28,7 +28,7 @@ using namespace std;
 class tGame{
 public:
     vector<int> patterns;
-	void executeGame(tAgent* agent,FILE *f,double sensorNoise);
+	void executeGame(tAgent* agent,FILE *f,double sensorNoise,int repeat);
 	tGame(char* filename);
 	~tGame();
 	double mutualInformation(vector<int> A,vector<int>B);
@@ -50,5 +50,6 @@ public:
     void applyNoise(tAgent *agent,double sensorNoise);
     double agentDependentRandDouble(void);
     int agentDependentRandInt(void);
+    int nowUpdate;
 };
 #endif

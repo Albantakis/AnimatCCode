@@ -20,12 +20,13 @@ using namespace std;
 //double replacementRate=0.1;
 double perSiteMutationRate=0.005;
 int update=0;
-int repeats=1;
+int repeats=20; //1;
 int maxAgent=100;
 int totalGenerations=60000;
 char trialName[1000];
 double sensorNoise=0.0;
-
+//Larissa
+bool nowUpdate=false;
 
 void saveLOD(tGame *game,tAgent *agent,FILE *statsFile,FILE *genomeFile);
 
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
         srand(getpid());
 	agent.resize(maxAgent);
 	game=new tGame(argv[1]);
+    game->nowUpdate=floor(totalGenerations/2); 
     sensorNoise=atof(argv[6]);
     /*
 	masterAgent=new tAgent;
@@ -124,15 +126,24 @@ int main(int argc, char *argv[])
 	masterAgent->nrPointingAtMe--;
 	cout<<"setup complete"<<endl;
 	while(update<totalGenerations){
+        //Larissa: to be able to change parameters after a certain number of Generations
+//        if ((update>0.1*totalGenerations)&(nowUpdate==false)){
+//            nowUpdate = true;
+//            game=new tGame(argv[7]);
+//            cout<<update<<" STOP "<<nowUpdate<<endl;
+//        } 
 		for(i=0;i<agent.size();i++){
 			agent[i]->fitness=0.0;
 			agent[i]->fitnesses.clear();
 		}
 		for(i=0;i<agent.size();i++){
 			for(j=0;j<repeats;j++){
-//                agent[i]->fitness=randDouble;
-				game->executeGame(agent[i],NULL,sensorNoise);
+//                if (update > 1000){
+//                agent[i]->fitnesses.push_back((float)randDouble);
+//                }else{
+				game->executeGame(agent[i],NULL,sensorNoise,j);
 				agent[i]->fitnesses.push_back((float)agent[i]->correct);
+//                }
 			}
 		}
 		//fflush(resFile);
@@ -170,7 +181,9 @@ int main(int argc, char *argv[])
 		update++;
 	}
 //	agent[0]->saveLOD(LOD,genomeFile);
-    game->makeFullAnalysis(agent[0],argv[4],sensorNoise);
+//    game->makeFullAnalysis(agent[0],argv[4],sensorNoise);
+// Larissa: put noise to 0 for analysis    
+    game->makeFullAnalysis(agent[0],argv[4],0);
     saveLOD(game,agent[0],LOD,genomeFile);
 	//agent[0]->ancestor->ancestor->saveGenome(genomeFile);
     return 0;
@@ -186,7 +199,9 @@ void saveLOD(tGame *game,tAgent *agent,FILE *statsFile,FILE *genomeFile){
     for(int i=(int)list.size()-1;i>0;i--){
         agent=list[i];
         if((agent->born&LOD_record_Intervall)==0){
-            vector<vector<int> > T=game->executeGameLogStates(agent,sensorNoise);
+//            vector<vector<int> > T=game->executeGameLogStates(agent,sensorNoise);
+//          Larissa: set noise to 0 for analysis  
+            vector<vector<int> > T=game->executeGameLogStates(agent,0);
             double R=game->computeRGiven(T[2], T[3], T[4], 4, 2, 4);
             fprintf(statsFile,"%i   %i  %i  %f",agent->born,agent->correct,agent->incorrect,R);
             for(int i=0;i<agent->differentialCorrects.size();i++)
