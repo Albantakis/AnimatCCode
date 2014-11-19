@@ -20,13 +20,11 @@ using namespace std;
 //double replacementRate=0.1;
 double perSiteMutationRate=0.005;
 int update=0;
-int repeats=20; //1;
+int repeats=1; //1;
 int maxAgent=100;
 int totalGenerations=60000;
 char trialName[1000];
 double sensorNoise=0.0;
-//Larissa
-bool nowUpdate=false;
 
 void saveLOD(tGame *game,tAgent *agent,FILE *statsFile,FILE *genomeFile);
 
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
         srand(getpid());
 	agent.resize(maxAgent);
 	game=new tGame(argv[1]);
-    game->nowUpdate=floor(totalGenerations/2); 
+    game->nowUpdate=floor(totalGenerations/2); //Larissa
     sensorNoise=atof(argv[6]);
     /*
 	masterAgent=new tAgent;
@@ -126,24 +124,14 @@ int main(int argc, char *argv[])
 	masterAgent->nrPointingAtMe--;
 	cout<<"setup complete"<<endl;
 	while(update<totalGenerations){
-        //Larissa: to be able to change parameters after a certain number of Generations
-//        if ((update>0.1*totalGenerations)&(nowUpdate==false)){
-//            nowUpdate = true;
-//            game=new tGame(argv[7]);
-//            cout<<update<<" STOP "<<nowUpdate<<endl;
-//        } 
 		for(i=0;i<agent.size();i++){
 			agent[i]->fitness=0.0;
 			agent[i]->fitnesses.clear();
 		}
 		for(i=0;i<agent.size();i++){
 			for(j=0;j<repeats;j++){
-//                if (update > 1000){
-//                agent[i]->fitnesses.push_back((float)randDouble);
-//                }else{
 				game->executeGame(agent[i],NULL,sensorNoise,j);
 				agent[i]->fitnesses.push_back((float)agent[i]->correct);
-//                }
 			}
 		}
 		//fflush(resFile);
@@ -154,7 +142,14 @@ int main(int argc, char *argv[])
 			for(j=0;j<repeats;j++)
                 agent[i]->fitness*=agent[i]->fitnesses[j];
             //agent[i]->fitness=sqrt(agent[i]->fitness);
+            if(repeats <= 1){
+            //cout<<agent[i]->fitness<<endl;
+            agent[i]->fitness=pow(1.02,agent[i]->fitness);  //Larissa: This for one repeat
+            }else {
+            agent[i]->fitness=pow(agent[i]->fitness,1.0/repeats);
             agent[i]->fitness=pow(1.02,agent[i]->fitness);
+//            cout<<agent[i]->fitness<<endl;
+            }    
 			if(agent[i]->fitness>maxFitness){
                 who=i;
 				maxFitness=agent[i]->fitness;

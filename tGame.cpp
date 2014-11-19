@@ -12,6 +12,9 @@
 
 #define KISSRND (((((rndZ=36969*(rndZ&65535)+(rndZ>>16))<<16)+(rndW=18000*(rndW&65535)+(rndW>>16)) )^(rndY=69069*rndY+1234567))+(rndX^=(rndX<<17), rndX^=(rndX>>13), rndX^=(rndX<<5)))
 #define INTABS(number) (((((0x80)<<((sizeof(int)-1)<<3))&number) ? (~number)+1 : number))
+
+#define randDouble ((double)rand()/(double)RAND_MAX)
+
 int rndX,rndY,rndZ,rndW;
 
 
@@ -40,9 +43,11 @@ int tGame::agentDependentRandInt(void){
 
 
 void tGame::applyNoise(tAgent *agent,double sensorNoise){
-    if(agentDependentRandDouble()<sensorNoise)
-        agent->states[0]=!agent->states[0];
-    if(agentDependentRandDouble()<sensorNoise)
+    //if(agentDependentRandDouble()<sensorNoise){
+    if(randDouble<sensorNoise)  //Larissa: If I don't have noise in evaluation, then I can just use random numbers always
+          agent->states[0]=!agent->states[0];
+    //if(agentDependentRandDouble()<sensorNoise)
+    if(randDouble<sensorNoise)
         agent->states[1]=!agent->states[1];
 }
 
@@ -52,9 +57,11 @@ void tGame::executeGame(tAgent* agent,FILE *f,double sensorNoise, int repeat){
     unsigned char W;
     int action;
     rndW=agent->ID+repeat; // make random seeds unique from one another by including index
-	rndX=~agent->ID+repeat;
+	rndX=~(agent->ID+repeat);
 	rndY=(agent->ID+repeat)^0b01010101010101010101010101010101;
 	rndZ=(agent->ID+repeat)^0b10101010101010101010101010101010;
+    //cout<<rndZ<<endl;
+
     agent->fitness=1.0;
     agent->correct=agent->incorrect=0;
     bool hit;
@@ -64,12 +71,18 @@ void tGame::executeGame(tAgent* agent,FILE *f,double sensorNoise, int repeat){
     for(i=0;i<patterns.size();i++){
         for(j=-1;j<2;j+=2){
             for(k=0;k<16;k++){
-                //Larissa: Change environment after 30,000 Gen
-//                if (agent->born > nowUpdate || i<2){
+                //Larissa: Change environment after 30,000 Gen, if patterns is 1 7 15 3 it changes 
+                //from 2 blocks with 1 7 to 4 blocks with 1 7 15 3 
+                //if (agent->born > nowUpdate || i<2){
+                if (agent->born > nowUpdate){
                     world=patterns[i];                  
-//                } else{
-//                    world=patterns[i-2];
-//                }    
+                    //cout<<world<<endl;
+                } else{
+                    //world=patterns[i-2];
+                    if (i == 0 || i == 2) world=7;
+                    else if (i==1 || i == 3) world=1;
+                    //cout<<world<<endl;
+                }    
                 agent->resetBrain();
                 botPos=k;
                 blockPos=0;
@@ -80,12 +93,12 @@ void tGame::executeGame(tAgent* agent,FILE *f,double sensorNoise, int repeat){
 //                    printf("\n");
                     //AH: Sensors have no noise in them now
                     agent->states[0]=(world>>botPos)&1;
+//                    agent->states[1]=0;                      
                     agent->states[1]=(world>>((botPos+2)&15))&1;
                     //Larissa: Set to 0 to evolve animats with just one sensor
 //                    if (agent->born > nowUpdate){
 //                        agent->states[0]=0;
-//                        agent->states[1]=0;                      
-////                        agent->states[1]=(world>>((botPos+2)&15))&1;
+//                        agent->states[1]=(world>>((botPos+2)&15))&1;
 //                    }
                     //AH: apply noise does apply noise to them now
                     applyNoise(agent, sensorNoise);
@@ -164,11 +177,16 @@ vector<vector<int> > tGame::executeGameLogStates(tAgent* agent,double sensorNois
         for(j=-1;j<2;j+=2){
             for(k=0;k<16;k++){
                 //Larissa: Change environment after 30,000 Gen
-//                if (agent->born > nowUpdate || i<2){
+                //if (agent->born > nowUpdate || i<2){
+                if (agent->born > nowUpdate){
                     world=patterns[i];                  
-//                } else{
-//                    world=patterns[i-2];
-//                }  
+                    //cout<<world<<endl;
+                } else{
+                    //world=patterns[i-2];
+                    if (i == 0 || i == 2) world=7;
+                    else if (i==1 || i == 3) world=1;
+                    //cout<<world<<endl;
+                }    
                 agent->resetBrain();
                 botPos=k;
                 blockPos=0;
@@ -181,11 +199,12 @@ vector<vector<int> > tGame::executeGameLogStates(tAgent* agent,double sensorNois
                     //AH: Sensors have no noise in them now
                     agent->states[0]=(world>>botPos)&1;
                     agent->states[1]=(world>>((botPos+2)&15))&1;
+//                    agent->states[1]=0;                      
+
 //                    //Larissa: Set to 0 to evolve animats with just one sensor
 //                    if (agent->born > nowUpdate){
 //                        agent->states[0]=0;
-//                        agent->states[1]=0;                      
-//                        //                        agent->states[1]=(world>>((botPos+2)&15))&1;
+//                          agent->states[1]=(world>>((botPos+2)&15))&1;
 //                    }
                     //AH: apply noise does apply noise to them now
                     applyNoise(agent, sensorNoise);  
@@ -276,11 +295,16 @@ void tGame::analyseKO(tAgent* agent,int which, int setTo,double sensorNoise){
         for(j=-1;j<2;j+=2){
             for(k=0;k<16;k++){
                 //Larissa: Change environment after 30,000 Gen
-//                if (agent->born > nowUpdate || i<2){
+                //if (agent->born > nowUpdate || i<2){
+                if (agent->born > nowUpdate){
                     world=patterns[i];                  
-//                } else{
-//                    world=patterns[i-2];
-//                }  
+                    //cout<<world<<endl;
+                } else{
+                    //world=patterns[i-2];
+                    if (i == 0 || i == 2) world=7;
+                    else if (i==1 || i == 3) world=1;
+                    //cout<<world<<endl;
+                }    
                 agent->resetBrain();
                 botPos=k;
                 blockPos=0;
@@ -293,10 +317,10 @@ void tGame::analyseKO(tAgent* agent,int which, int setTo,double sensorNoise){
                     agent->states[0]=(world>>botPos)&1;
                     agent->states[1]=(world>>((botPos+2)&15))&1;
 //                    //Larissa: Set to 0 to evolve animats with just one sensor
+//                    agent->states[1]=0;                
 //                    if (agent->born > nowUpdate){
 //                        agent->states[0]=0;
-//                        agent->states[1]=0;                
-////                        agent->states[1]=(world>>((botPos+2)&15))&1;
+//                        agent->states[1]=(world>>((botPos+2)&15))&1;
 //                    }
                     //AH: apply noise does apply noise to them now
                     applyNoise(agent, sensorNoise);
